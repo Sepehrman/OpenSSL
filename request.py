@@ -1,11 +1,12 @@
 class ServerRequest:
 
     def __init__(self):
-        self.root_directory = None
         self.port = None
+        self.private_key = None
+        self.public_key = None
 
     def __str__(self):
-        return f"ServerRequest: port: {self.port}, root_directory: {self.root_directory}"
+        return f"ServerRequest: port: {self.port}, private_key: {self.private_key}, public_key {self.public_key}"
 
 
 class ClientRequest:
@@ -16,4 +17,4 @@ class ClientRequest:
         self.port = None
 
     def __str__(self):
-        return f"ClientRequest: ip_address: {self.ip_address}, files: {self.files}, port {self.port}"
+        return f"ClientRequest: ip_address: {self.ip_address}, port {self.port}"

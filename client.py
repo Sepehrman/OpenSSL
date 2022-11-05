@@ -14,6 +14,7 @@ def setup_client_cmd_request() -> ClientRequest:
                                            "Must be set to a valid IP Address", required=True)
     parser.add_argument("-p", "--port", help="The port in which the client runs on "
                                              "Defaults to 5001", required=False, default=DEFAULT_PORT, type=int)
+
     try:
         args = parser.parse_args()
         req = ClientRequest()
@@ -30,11 +31,10 @@ def setup_client_cmd_request() -> ClientRequest:
 def execute_request(req: ClientRequest):
     s = socket.socket()
     s.connect((req.ip_address, req.port))
-    sending = True
-    while sending:
-        s.send(bytes(f'{input()}', 'utf-8'))
-        print("from server", s.recv(1024).decode('utf-8'))
 
+    message = input()
+    s.send(message.encode('utf-8'))
+    print(s.recv(1024).decode('utf-8'))
     s.close()
 
 
