@@ -1,13 +1,15 @@
+# client.py
 import argparse
+# Example code used: https://github.com/arthurazs/python-tls
+# --------------------------------------------------
 import socket
 import ssl
-
 from request import ClientRequest
 
+IP = "127.0.0.1"
+PORT = 5000
+HOSTNAME = "www.bcit.ca"
 DEFAULT_PORT = 5000
-CLIENT_HOST = socket.gethostbyname(socket.gethostname())
-# CLIENT_HOST = '192.168.1.239'
-
 
 def setup_client_cmd_request() -> ClientRequest:
     parser = argparse.ArgumentParser()
@@ -29,21 +31,31 @@ def setup_client_cmd_request() -> ClientRequest:
 
 
 def execute_request(req: ClientRequest):
-    try:
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # trydefault context
-        context.load_verify_locations('cert.pem')  # Load certificates
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.load_verify_locations("cert.pem")
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # s.connect((req.ip_address, req.port))
-        c_socket = context.wrap_socket(s, server_hostname=CLIENT_HOST)
-        c_socket.connect((req.ip_address, req.port))
+    client_socket = socket.socket()
+    try:
+
+        client_socket.connect((req.ip_address, req.port))
+
+        ssl_context = context.wrap_socket(client_socket, server_hostname=HOSTNAME)
+        client_cert = ssl_context.getpeercert()
+        if not client_cert:
+            raise Exception("Unable to retrieve server certificate")
+
+        # print(f'cert {ssl.client_cert}')
         message = input()
-        c_socket.send(message.encode('utf-8'))
-        print(s.recv(1024).decode('utf-8'))
-        c_socket.close()
-        s.close()
+        ssl_context.send(message.encode())
+
+        capitalized_message = ssl_context.recv(1024).decode()
+        print(f'{capitalized_message}')
+        ssl_context.close()
+
     except Exception as e:
-        print(f"CLIENT ERROR {e}")
+        print(f'Error: {e}')
+    finally:
+        client_socket.close()
 
 
 def main():

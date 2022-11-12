@@ -1,71 +1,59 @@
 import argparse
-import os
 import socket
 import ssl
-
 from request import ServerRequest
 
 SERVER_HOST = socket.gethostbyname(socket.gethostname())
-
 SERVER_PORT = 5000
-MAX_INCOMING_CONNECTIONS = 999
-DEFAULT_PATH = './server/downloads/'
+MAX_CONNECTIONS = 999
 
-def create_socket(req):
+
+def execute_requests(req: ServerRequest):
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     try:
-        # specify cntext
-        # load certs
-        # wrapped in context
-        # ssl.OpenSSL
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain("cert.pem", "key.pem")
 
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER) #trydefault context
-        context.load_cert_chain('cert.pem', 'key.pem')  # Load certificates
+        server_socket.bind((SERVER_HOST, req.port))
+        server_socket.listen(MAX_CONNECTIONS)
+        print(f'Listening on {SERVER_HOST}:{req.port}')
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((SERVER_HOST, req.port))
-        s.listen(MAX_INCOMING_CONNECTIONS)
-        # client_connect, client_addr = s.accept()
+        ssl_connect = context.wrap_socket(server_socket, server_side=True)
 
-        s_socket = context.wrap_socket(s, server_side=True)
-        # client_cert = clien
+        # print(ssl_connect.getpeercert())
+        # cert = ssl_connect.getpeercert()
+        # cert = {'subject': ((('commonName', 'example.com'),),)}
+        # ssl.match_hostname(cert, "www.bcit.ca")
 
-        print(f"[LOG] Listening as {SERVER_HOST}:{req.port}")
-        accepting = True
-        while accepting:
-            conn, addr = s_socket.accept()
-            s_socket.do_handshake()
-            print(f"[LOG] {addr} has connnected.")
-            received_message = conn.recv(1024).decode()
-            print(f"message from client: {received_message}")
-            conn.send(received_message.upper().encode())
-        s_socket.close()
-        s.close()
+        # ssl.match_hostname(cert, "example.org")
+        # print(f'cert{cert}')
+        conn, addr = ssl_connect.accept()
+        print(conn)
+        print(f'{addr} has connected.')
+        message = conn.recv(1024).decode('utf-8')
+        print(f'message from client {message}')
+        conn.send(message.upper().encode())
+        conn.close()
+    except ssl.CertificateError as e:
+        print(f"CertificateError: {e}")
+    except ssl.SSLError as e:
+        print(f"SSL Error: {e}")
     except Exception as e:
-        print(f"ERROR: {e}")
+        print(f"Error: {e}")
+        quit()
 
-def init_server(req: ServerRequest):
-    create_socket(req)
 
 def setup_server_cmd_request() -> ServerRequest:
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", help="The port in which the program should run. Defaults to 8000",
                         required=False, default=SERVER_PORT, type=int)
-    # parser.add_argument("-pub", "--pubkey", help="The public key or file name",
-    #                     required=True)
-    # parser.add_argument("-priv", "--privkey", help="The public key or file name",
-    #                     required=True)
 
     try:
         args = parser.parse_args()
         req = ServerRequest()
         req.port = args.port
-        # req.public_key = args.pubkey
-        # req.private_key = args.privkey
-
-        # pub_key_exists = os.path.exists(req.public_key)
-
-        # priv_key_exists = os.path.exists(req.private_key)
-        # print(f"{req.private_key} is dir? {priv_key_exists}")
 
         return req
     except Exception as e:
@@ -77,7 +65,7 @@ def setup_server_cmd_request() -> ServerRequest:
 
 def main():
     request = setup_server_cmd_request()
-    init_server(request)
+    execute_requests(request)
 
 
 if __name__ == "__main__":
