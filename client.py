@@ -46,8 +46,10 @@ def execute_request(req: ClientRequest):
 
     client_socket = socket.socket()
     try:
+        client_socket.settimeout(5)
+        res = client_socket.connect((req.ip_address, req.port))
 
-        client_socket.connect((req.ip_address, req.port))
+        print(f'res {res}')
         ssl_context = context.wrap_socket(client_socket, server_hostname=HOSTNAME)
         client_cert = ssl_context.getpeercert()
         if not client_cert:
@@ -58,7 +60,8 @@ def execute_request(req: ClientRequest):
         capitalized_message = ssl_context.recv(BUFF_SIZE).decode()
         print(f'{capitalized_message}')
         ssl_context.close()
-
+    except TimeoutError as e:
+        print(f'TimeoutError: Failed to establish connection with {req.ip_address}:{req.port}')
     except Exception as e:
         print(f'Error: {e}')
     finally:
