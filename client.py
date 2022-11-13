@@ -33,7 +33,11 @@ def setup_client_cmd_request() -> ClientRequest:
 
 def init_context():
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    context.load_verify_locations("cert.pem")
+    try:
+        context.load_verify_locations("cert.pem")
+    except ssl.SSLError as e:
+        print(f"SSLError : {e}")
+        quit()
     return context
 
 
