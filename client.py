@@ -6,10 +6,11 @@ import socket
 import ssl
 from request import ClientRequest
 
-IP = "127.0.0.1"
 PORT = 5000
 HOSTNAME = "www.bcit.ca"
 DEFAULT_PORT = 5000
+BUFF_SIZE = 1024
+
 
 def setup_client_cmd_request() -> ClientRequest:
     parser = argparse.ArgumentParser()
@@ -30,25 +31,27 @@ def setup_client_cmd_request() -> ClientRequest:
         quit()
 
 
-def execute_request(req: ClientRequest):
+def init_context():
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.load_verify_locations("cert.pem")
+    return context
+
+
+def execute_request(req: ClientRequest):
+    context = init_context()
 
     client_socket = socket.socket()
     try:
 
         client_socket.connect((req.ip_address, req.port))
-
         ssl_context = context.wrap_socket(client_socket, server_hostname=HOSTNAME)
         client_cert = ssl_context.getpeercert()
         if not client_cert:
             raise Exception("Unable to retrieve server certificate")
 
-        # print(f'cert {ssl.client_cert}')
         message = input()
         ssl_context.send(message.encode())
-
-        capitalized_message = ssl_context.recv(1024).decode()
+        capitalized_message = ssl_context.recv(BUFF_SIZE).decode()
         print(f'{capitalized_message}')
         ssl_context.close()
 
@@ -56,6 +59,7 @@ def execute_request(req: ClientRequest):
         print(f'Error: {e}')
     finally:
         client_socket.close()
+        quit()
 
 
 def main():
