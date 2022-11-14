@@ -47,7 +47,7 @@ def execute_request(req: ClientRequest):
     client_socket = socket.socket()
     try:
         client_socket.settimeout(5)
-        res = client_socket.connect((req.ip_address, req.port))
+        client_socket.connect((req.ip_address, req.port))
 
         ssl_context = context.wrap_socket(client_socket, server_hostname=HOSTNAME)
         client_cert = ssl_context.getpeercert()
