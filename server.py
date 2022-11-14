@@ -45,7 +45,7 @@ def execute_requests(req: ServerRequest):
         quit()
 
 
-def handle_message(connection: ssl.SSLSocket, addr):
+def handle_message(connection, addr):
     message = connection.recv(BUFF_SIZE).decode('utf-8')
     print(f'{addr[0]}: "{message}"')
     connection.send(message.upper().encode())
